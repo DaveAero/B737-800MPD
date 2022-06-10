@@ -1,4 +1,4 @@
-# Importing 
+# Importing
 import numpy as np
 import pandas as pd
 
@@ -51,21 +51,33 @@ Appliability(SnP, "SnP.xlsx")
 Appliability(Str, "Str.xlsx")
 Appliability(Zon, "Zon.xlsx")
 
-#Description = Zon.loc[Zon['APPLICABILITY'] == "Note", 'TASK DESCRIPTION'].unique()
-#LenDes = int(len(Description))
-#RangeDes = list(range(0 , LenDes))
+NoteList = []
+def Notegetter(df):
+    Description = df['TASK DESCRIPTION'].copy()
+    LenDes = int(len(Description))
+    RangeDes = list(range(0 , LenDes))
 
-#for x in RangeDes:
-#    ListDes = str(Description[x]).split("\n")
-#    LenListDes = int(len(ListDes))
-#    RangeListDes = list(range(0 , LenListDes))
-#    
-#    for i in RangeListDes:
-#        if "AIRPLANE NOTE:" in ListDes[i]:
-#            print(ListDes[i])
-#            check = input("Applicable Y/N?")
-#            if check == "Y":
-#                Zon.loc[Zon['TASK DESCRIPTION'] == Description[x],  'APPLICABILITY'] = "Applicable"
-#            elif check == "N":
-#                Zon.loc[Zon['TASK DESCRIPTION'] == Description[x],  'APPLICABILITY'] = "Not Applicable"
-#            Zon
+    for x in RangeDes:
+        ListDes = str(Description[x]).split("\n")
+        RangeListDes = list(range(0 , int(len(ListDes))))
+
+        for i in RangeListDes:
+            if "AIRPLANE NOTE:" in ListDes[i]:
+                NoteList.append(ListDes[i])
+            elif "ENGINE NOTE:" in ListDes[i]:
+                NoteList.append(ListDes[i])
+
+Notegetter(SnP)
+Notegetter(Str)
+Notegetter(Zon)
+
+NoteShort = []
+
+for x in NoteList:
+    # check if exists in unique_list or not
+    if x not in NoteShort:
+        NoteShort.append(x)
+        print(x)
+
+print(len(NoteList))
+print(len(NoteShort))
