@@ -33,9 +33,9 @@ Checker = lambda x,y: [bool(re.fullmatch(y, value)) for value in x]
 Applicabilitytable = ["ALL", "NOTE", "600", "700", "700C", "700IGW", "800", "800BCF", "900", "900ER"]
 
 n=4
-for value in Applicabilitytable:
-    list = Checker(truthTable['APPLICABILITY APL'], value)
-    truthTable.insert(column='{}'.format(value), loc=n, value = list)
+for value in Applicalist = Checker(truthTable['APPLICABILITY APL'], value)
+    truthTable.insert(column='{}'.format(value), loc=n, value = list)bilitytable:
+    
     n += 1
 
 doubletake = truthTable.loc[(truthTable["ALL"] == False) & (truthTable["NOTE"] == False) & (truthTable["600"] == False) & (truthTable["700"] == False) & (truthTable["700C"] == False) & (truthTable["700IGW"] == False) & (truthTable["800"] == False) & (truthTable["800BCF"] == False) & (truthTable["900"] == False) & (truthTable["900ER"] == False)]
