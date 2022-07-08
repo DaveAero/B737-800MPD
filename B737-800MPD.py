@@ -61,21 +61,18 @@ def ApplicabilityChecker(table, path):
     # The tables are matched as both contain the APPLICABILITY APL Column
     MPDTruthTable = pd.merge(table, truthTable, on = "APPLICABILITY APL", how = 'inner')
 
+    ############################ Engine Note ############################
+    Airplane = MPDTruthTable['APPLICABILITY ENG'].apply(str)
+    ENGtest = Searcher('NOTE', Airplane)
+    MPDTruthTable.insert(column = 'ENGINE NOTE', loc = int(len(MPDTruthTable.columns)), value = ENGtest)
+
     ############################ Airplane Note ############################
-    Airplane = MPDTruthTable['TASK DESCRIPTION'].apply(str)
-    thetest = Searcher('AIRPLANE NOTE:', Airplane)
-    thelist = []
-    n=0
-    for value in thetest:
-        if value == True:
-            result = re.search(r"AIRPLANE NOTE:(.*)", Airplane[n])
-            thelist.append(result.group(0))
-            #fulllist.append(result.group(0))
-            n += 1 
-        else:
-            thelist.append(False)
-            n += 1
-    MPDTruthTable.insert(column = 'AIRPLANE NOTE:', loc = int(len(MPDTruthTable.columns)), value = thelist)
+    MPDTruthTable.insert(column = 'NOTE TEXT', loc = int(len(MPDTruthTable.columns)), value = np.nan)
+
+    for index, row in MPDTruthTable.iterrows():
+        result = re.search(r"AIRPLANE NOTE:(.*)", str(row['TASK DESCRIPTION']))
+        if result != None:
+            MPDTruthTable.loc[index, 'NOTE TEXT'] = result.group(0) 
 
 
     ############################ APPLICABILITY ############################
@@ -86,6 +83,7 @@ def ApplicabilityChecker(table, path):
     MPDTruthTable.loc[MPDTruthTable["ALL"] == True, 'Applicability'] = True
     MPDTruthTable.loc[MPDTruthTable["800"] == True, 'Applicability'] = True
     MPDTruthTable.loc[MPDTruthTable["NOTE"] == True, 'Applicability'] = "NOTE"
+    MPDTruthTable.loc[MPDTruthTable['ENGINE NOTE'] == True, 'Applicability'] = "NOTE"
     MPDTruthTable.loc[(MPDTruthTable["ALL"] == False) & (MPDTruthTable["800"] == False), 'Applicability'] = False
 
     #print(thelist)
