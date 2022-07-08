@@ -11,18 +11,20 @@ Zon = pd.read_excel('data\mpdsup.xls', "ZONAL INSPECTION PROGRAM", skiprows=5, n
 # Setting up Applicability option
 Applicabilitytable = ["ALL", "NOTE", "600", "700", "700C", "700IGW", "800", "800BCF", "900", "900ER"]
 
+# Loading Type from Excel File
+DataEntry = pd.read_excel('DataEntry.xlsx')
+
 ############################ Functions ############################
+# function for searching the applicability function
+# Checker will match only if it is a full match
+Checker = lambda y, value: [bool(re.fullmatch(y, x)) for x in value]
+
+# Searcher will match if the value is in the provided list
+Searcher = lambda y, value: [bool(re.search(y, x, re.IGNORECASE)) for x in value]
+
 # Defining fuction to be used on all 3 MPD tabs
 def ApplicabilityChecker(table, path):
-
-    ############################ Functions ############################
-    # function for searching the applicability function
-    # Checker will match only if it is a full match
-    Checker = lambda y, value: [bool(re.fullmatch(y, x)) for x in value]
-    # Searcher will match if the value is in the provided list
-    Searcher = lambda y, value: [bool(re.search(y, x, re.IGNORECASE)) for x in value]
-
-    ############################ TRUTH TABLE ############################
+    ############################ Aircraft Type Applicability ############################
     # Setting up the truth Table
     # Blank Database
     truthTable = pd.DataFrame()
@@ -61,19 +63,31 @@ def ApplicabilityChecker(table, path):
     # The tables are matched as both contain the APPLICABILITY APL Column
     MPDTruthTable = pd.merge(table, truthTable, on = "APPLICABILITY APL", how = 'inner')
 
-    ############################ Engine Note ############################
-    Airplane = MPDTruthTable['APPLICABILITY ENG'].apply(str)
-    ENGtest = Searcher('NOTE', Airplane)
+    ############################ Engine Type Applicability ############################
+    # Search to check if Note is in the Engine Applicability column
+    ENGtest = Searcher('NOTE', MPDTruthTable['APPLICABILITY ENG'].apply(str))
+    # Adding Engine Applicability column to the Truth Table
     MPDTruthTable.insert(column = 'ENGINE NOTE', loc = int(len(MPDTruthTable.columns)), value = ENGtest)
 
-    ############################ Airplane Note ############################
+    ############################ Note Extraction ############################
+    # Inserting a blank row for the extracted notes
     MPDTruthTable.insert(column = 'NOTE TEXT', loc = int(len(MPDTruthTable.columns)), value = np.nan)
 
+    # Searching through the table row by row for matches with Airplane note and Engine Note
     for index, row in MPDTruthTable.iterrows():
+        # On each row check the Taks Description for a match with Airplane Note
         result = re.search(r"AIRPLANE NOTE:(.*)", str(row['TASK DESCRIPTION']))
+        # if the result is not None
         if result != None:
-            MPDTruthTable.loc[index, 'NOTE TEXT'] = result.group(0) 
-
+            # Print the extracted text to the new column
+            MPDTruthTable.loc[index, 'NOTE TEXT'] = result.group(1)
+        
+        # On each row check the Taks Description for a match with Engine Note
+        result = re.search(r"ENGINE NOTE:(.*)", str(row['TASK DESCRIPTION']))
+        # if the result is not None
+        if result != None:
+            # Print the extracted text to the new column
+            MPDTruthTable.loc[index, 'NOTE TEXT'] = result.group(1)
 
     ############################ APPLICABILITY ############################
     # Insert blank Row for Applicability
@@ -81,22 +95,15 @@ def ApplicabilityChecker(table, path):
 
     # Applying Applicability Rules
     MPDTruthTable.loc[MPDTruthTable["ALL"] == True, 'Applicability'] = True
-    MPDTruthTable.loc[MPDTruthTable["800"] == True, 'Applicability'] = True
+    MPDTruthTable.loc[MPDTruthTable[str(DataEntry.loc[0, 'Aircraft Type:'])] == True, 'Applicability'] = True
     MPDTruthTable.loc[MPDTruthTable["NOTE"] == True, 'Applicability'] = "NOTE"
     MPDTruthTable.loc[MPDTruthTable['ENGINE NOTE'] == True, 'Applicability'] = "NOTE"
-    MPDTruthTable.loc[(MPDTruthTable["ALL"] == False) & (MPDTruthTable["800"] == False), 'Applicability'] = False
+    MPDTruthTable.loc[(MPDTruthTable["ALL"] == False) & (MPDTruthTable[str(DataEntry.loc[0, 'Aircraft Type:'])] == False), 'Applicability'] = False
 
-    #print(thelist)
-
-
+    # Print to Excel at the end
     MPDTruthTable.to_excel(path)
 
 ############################ Main Code ############################
-fulllist = []
-
 ApplicabilityChecker(SnP, "SnPTruthTable.xlsx")
 ApplicabilityChecker(Str, "StrTruthTable.xlsx")
 ApplicabilityChecker(Zon, "ZonTruthTable.xlsx")
-#fulllistdf = pd.DataFrame()
-#fulllistdf.insert(column = 'fulllist', loc = int(len(fulllistdf.columns)), value = fulllist)
-#fulllistdf.to_excel("fulllistdf.xlsx")
