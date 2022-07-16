@@ -13,6 +13,8 @@ Applicabilitytable = ["ALL", "NOTE", "600", "700", "700C", "700IGW", "800", "800
 
 # Loading Type from Excel File
 DataEntry = pd.read_excel('DataEntry.xlsx')
+type = str(DataEntry.loc[0, 'Aircraft Type:'])
+winglets = str(DataEntry.loc[0, 'Winglets'])
 
 ############################ Functions ############################
 # function for searching the applicability function
@@ -58,6 +60,17 @@ def ApplicabilityChecker(table, path):
         # Appending the resulting list to the Truth Table with the header being the Applicability aircraft type 
         truthTable.insert(column = '{}'.format(value), loc = int(len(truthTable.columns)), value = truthColumn)
 
+    ############################ APPLICABILITY ############################
+
+    # Insert blank Row for Applicability
+    truthTable.insert(column = 'Applicability', loc = int(len(truthTable.columns)), value = np.nan)
+
+    # Applying Applicability Rules
+    truthTable.loc[truthTable["ALL"] == True, 'Applicability'] = True
+    truthTable.loc[truthTable[type] == True, 'Applicability'] = True
+    truthTable.loc[truthTable["NOTE"] == True, 'Applicability'] = "NOTE"
+    truthTable.loc[(truthTable["ALL"] == False) & (truthTable[type] == False), 'Applicability'] = False
+
     # Merge Truthtable
     # Merginging the resulting table of all the tests to the full MPD sheet
     # The tables are matched as both contain the APPLICABILITY APL Column
@@ -69,6 +82,9 @@ def ApplicabilityChecker(table, path):
     # Adding Engine Applicability column to the Truth Table
     MPDTruthTable.insert(column = 'ENGINE NOTE', loc = int(len(MPDTruthTable.columns)), value = ENGtest)
 
+    # Runing note checker on the new column
+    MPDTruthTable.loc[MPDTruthTable['ENGINE NOTE'] == True, 'Applicability'] = "NOTE"
+
     ############################ Note Extraction ############################
     # Inserting a blank row for the extracted notes
     MPDTruthTable.insert(column = 'NOTE TEXT', loc = int(len(MPDTruthTable.columns)), value = np.nan)
@@ -76,32 +92,20 @@ def ApplicabilityChecker(table, path):
     # Searching through the table row by row for matches with Airplane note and Engine Note
     for index, row in MPDTruthTable.iterrows():
         # On each row check the Taks Description for a match with Airplane Note
-        result = re.search(r"AIRPLANE NOTE:(.*)", str(row['TASK DESCRIPTION']))
+        pattern = re.compile(r'(?:AIRPLANE NOTE:)(?:(?!(INTERVAL NOTE:|SPECIAL NOTE:|SPECIAL NOTE:|ACCESS NOTE:))[A-Za-z0-9\.\s\:\'\;\(\)\-\/\, ])+')
+        result = re.search(pattern, str(row['TASK DESCRIPTION']))
         # if the result is not None
         if result != None:
             # Print the extracted text to the new column
-            MPDTruthTable.loc[index, 'NOTE TEXT'] = result.group(1)
-        
-        # On each row check the Taks Description for a match with Engine Note
-        result = re.search(r"ENGINE NOTE:(.*)", str(row['TASK DESCRIPTION']))
-        # if the result is not None
-        if result != None:
-            # Print the extracted text to the new column
-            MPDTruthTable.loc[index, 'NOTE TEXT'] = result.group(1)
+            MPDTruthTable.loc[index, 'NOTE TEXT'] = result.group(0)
 
-    ############################ APPLICABILITY ############################
-    # Insert blank Row for Applicability
-    MPDTruthTable.insert(column = 'Applicability', loc = int(len(MPDTruthTable.columns)), value = np.nan)
-
-    # Applying Applicability Rules
-    MPDTruthTable.loc[MPDTruthTable["ALL"] == True, 'Applicability'] = True
-    MPDTruthTable.loc[MPDTruthTable[str(DataEntry.loc[0, 'Aircraft Type:'])] == True, 'Applicability'] = True
-    MPDTruthTable.loc[MPDTruthTable["NOTE"] == True, 'Applicability'] = "NOTE"
-    MPDTruthTable.loc[MPDTruthTable['ENGINE NOTE'] == True, 'Applicability'] = "NOTE"
-    MPDTruthTable.loc[(MPDTruthTable["ALL"] == False) & (MPDTruthTable[str(DataEntry.loc[0, 'Aircraft Type:'])] == False), 'Applicability'] = False
 
     # Print to Excel at the end
     MPDTruthTable.to_excel(path)
+
+
+
+
 
 ############################ Main Code ############################
 ApplicabilityChecker(SnP, "SnPTruthTable.xlsx")
