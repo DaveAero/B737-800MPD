@@ -11,11 +11,6 @@ Zon = pd.read_excel('data\mpdsup.xls', "ZONAL INSPECTION PROGRAM", skiprows=5, n
 # Setting up Applicability option
 Applicabilitytable = ["ALL", "NOTE", "600", "700", "700C", "700IGW", "800", "800BCF", "900", "900ER"]
 
-# Loading Type from Excel File
-DataEntry = pd.read_excel('DataEntry.xlsx')
-type = str(DataEntry.loc[0, 'Aircraft Type:'])
-winglets = str(DataEntry.loc[0, 'Winglets'])
-
 ############################ Functions ############################
 # function for searching the applicability function
 # Checker will match only if it is a full match
